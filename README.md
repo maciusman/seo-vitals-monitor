@@ -2,6 +2,15 @@
 
 Comprehensive, production-ready SEO monitoring dashboard that automatically crawls your domains, detects critical changes, and alerts you to potential issues.
 
+## 🆓 **100% DARMOWE HOSTOWANIE!**
+
+Ta aplikacja działa **24/7 całkowicie za darmo** na:
+- ✅ **Fly.io** (POLECANE!) - 3GB PostgreSQL + 256MB Redis - 0 zł/mies
+- ✅ **Render.com** - Darmowy tier (usypia po 15 min) - 0 zł/mies
+- ✅ **Localhost Docker** - Jeśli masz komputer 24/7 - 0 zł/mies
+
+**📖 Zobacz porównanie:** [`DARMOWE-OPCJE-POROWNANIE.md`](DARMOWE-OPCJE-POROWNANIE.md)
+
 ## Features ✨
 
 ### Core Monitoring
@@ -47,7 +56,27 @@ Comprehensive, production-ready SEO monitoring dashboard that automatically craw
 
 ## Quick Start 🚀
 
-### Prerequisites
+### 🆓 Darmowe Opcje Hostingu (POLECANE!)
+
+**Chcesz 100% za darmo 24/7?** Wybierz jedną z opcji:
+
+1. **Fly.io (NAJLEPSZE!)** - Działa non-stop, worker automatyczny
+   - 📖 **Setup:** [`FLY-SETUP-DARMOWE.md`](FLY-SETUP-DARMOWE.md)
+   - 💰 Koszt: **0 ZŁ/miesiąc**
+
+2. **Render.com Free** - Najprostszy setup (usypia po 15 min)
+   - 📖 **Setup:** [`RENDER-FREE-SETUP.md`](RENDER-FREE-SETUP.md)
+   - 💰 Koszt: **0 ZŁ/miesiąc**
+
+3. **Localhost Docker** - Jeśli masz komputer 24/7
+   - 📖 **Setup:** Patrz niżej
+   - 💰 Koszt: **0 ZŁ/miesiąc**
+
+**📊 Nie wiesz którą wybrać?** Zobacz: [`DARMOWE-OPCJE-POROWNANIE.md`](DARMOWE-OPCJE-POROWNANIE.md)
+
+---
+
+### Prerequisites (tylko dla lokalnego developmentu)
 - Node.js 20+
 - PostgreSQL 16+
 - Redis 7+
