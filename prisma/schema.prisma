@@ -1,0 +1,258 @@
+// SEO Vitals Monitor - Database Schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Domain - monitorowana domena
+model Domain {
+  id              String    @id @default(cuid())
+  url             String    @unique
+  name            String
+  crawlFrequency  Int       @default(2) // dni
+  maxDepth        Int       @default(5)
+  maxPages        Int       @default(1000) // max stron do crawlowania
+  userAgent       String?
+  followRobotsTxt Boolean   @default(true)
+  active          Boolean   @default(true)
+  lastCrawledAt   DateTime?
+  lastStatus      DomainStatus @default(UNKNOWN)
+  healthScore     Int       @default(0) // 0-100
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  crawlJobs       CrawlJob[]
+  alerts          Alert[]
+  robotsTxtHistory RobotsTxt[]
+
+  @@index([active, lastCrawledAt])
+  @@index([url])
+}
+
+// CrawlJob - pojedynczy crawl domeny
+model CrawlJob {
+  id              String       @id @default(cuid())
+  domainId        String
+  status          CrawlStatus  @default(PENDING)
+  startedAt       DateTime     @default(now())
+  completedAt     DateTime?
+  duration        Int?         // sekundy
+  pagesFound      Int          @default(0)
+  pagesCrawled    Int          @default(0)
+  pagesNew        Int          @default(0)
+  pagesChanged    Int          @default(0)
+  pagesRemoved    Int          @default(0)
+  errors          Json?
+  summary         Json?        // podsumowanie wyników
+
+  domain          Domain       @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  snapshots       PageSnapshot[]
+  changes         ChangeDetection[]
+  triggeredAlerts TriggeredAlert[]
+
+  @@index([domainId, startedAt(sort: Desc)])
+  @@index([status])
+}
+
+// PageSnapshot - snapshot pojedynczej strony w danym crawlu
+model PageSnapshot {
+  id              String    @id @default(cuid())
+  crawlJobId      String
+  url             String
+  normalizedUrl   String    // znormalizowany URL (bez trailing slash itp)
+
+  // HTTP Response
+  statusCode      Int
+  statusMessage   String?
+  redirectUrl     String?
+  redirectChain   Json?     // cała chain redirectów
+  finalUrl        String?   // ostateczny URL po redirectach
+
+  // Page Content
+  title           String?
+  metaDescription String?   @db.Text
+  h1              String?   @db.Text
+  canonicalUrl    String?
+
+  // SEO Critical
+  metaRobots      String?   // content meta robots
+  xRobotsTag      String?   // X-Robots-Tag header
+  hasNoindex      Boolean   @default(false)
+  hasNofollow     Boolean   @default(false)
+
+  // Performance
+  responseTime    Int       // ms
+  contentLength   Int?      // bytes
+  contentType     String?
+
+  // Content Tracking
+  contentHash     String    // SHA256 content dla wykrywania zmian
+  htmlHash        String?   // hash HTML dla deep comparison
+
+  // Links
+  internalLinks   Int       @default(0)
+  externalLinks   Int       @default(0)
+
+  // Errors
+  error           String?   @db.Text
+  errorType       String?
+
+  crawlJob        CrawlJob  @relation(fields: [crawlJobId], references: [id], onDelete: Cascade)
+  createdAt       DateTime  @default(now())
+
+  @@index([crawlJobId])
+  @@index([url])
+  @@index([statusCode])
+  @@index([normalizedUrl, crawlJobId])
+}
+
+// ChangeDetection - wykryte zmiany między crawlami
+model ChangeDetection {
+  id              String       @id @default(cuid())
+  crawlJobId      String
+  url             String
+  changeType      ChangeType
+
+  oldValue        String?      @db.Text
+  newValue        String?      @db.Text
+
+  severity        Severity
+  description     String?      @db.Text
+
+  crawlJob        CrawlJob     @relation(fields: [crawlJobId], references: [id], onDelete: Cascade)
+  createdAt       DateTime     @default(now())
+
+  @@index([crawlJobId])
+  @@index([changeType])
+  @@index([severity])
+  @@index([url])
+}
+
+// Alert - konfiguracja alertów dla domeny
+model Alert {
+  id          String    @id @default(cuid())
+  domainId    String
+  name        String
+  description String?   @db.Text
+
+  // Rule Configuration (JSON)
+  // Przykład: { "type": "status_code_change", "from": [200], "to": [404, 500], "severity": "CRITICAL" }
+  rules       Json
+
+  // Notification Channels (JSON)
+  // Przykład: [{ "type": "email", "recipients": ["admin@example.com"] }, { "type": "webhook", "url": "..." }]
+  channels    Json
+
+  enabled     Boolean   @default(true)
+
+  domain      Domain    @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  triggeredAlerts TriggeredAlert[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([domainId])
+  @@index([enabled])
+}
+
+// TriggeredAlert - triggered alert instance
+model TriggeredAlert {
+  id          String    @id @default(cuid())
+  alertId     String
+  crawlJobId  String
+
+  severity    Severity
+  message     String    @db.Text
+  details     Json?
+
+  notified    Boolean   @default(false)
+  notifiedAt  DateTime?
+
+  alert       Alert     @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  crawlJob    CrawlJob  @relation(fields: [crawlJobId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+
+  @@index([alertId])
+  @@index([crawlJobId])
+  @@index([createdAt(sort: Desc)])
+}
+
+// RobotsTxt - historia robots.txt dla domeny
+model RobotsTxt {
+  id          String    @id @default(cuid())
+  domainId    String
+  content     String    @db.Text
+  hash        String    // SHA256 hash
+  parsedRules Json?     // sparsowane reguły
+
+  domain      Domain    @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@index([domainId, createdAt(sort: Desc)])
+}
+
+// Enums
+enum CrawlStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum DomainStatus {
+  UNKNOWN
+  HEALTHY
+  WARNING
+  CRITICAL
+  DOWN
+}
+
+enum ChangeType {
+  // Status code changes
+  STATUS_CODE_CHANGED
+
+  // Page lifecycle
+  NEW_PAGE
+  REMOVED_PAGE
+  PAGE_RESTORED
+
+  // SEO critical changes
+  NOINDEX_ADDED
+  NOINDEX_REMOVED
+  NOFOLLOW_ADDED
+  NOFOLLOW_REMOVED
+
+  // Redirects
+  REDIRECT_ADDED
+  REDIRECT_REMOVED
+  REDIRECT_CHANGED
+  REDIRECT_CHAIN_DETECTED
+
+  // Content changes
+  TITLE_CHANGED
+  META_DESCRIPTION_CHANGED
+  CANONICAL_CHANGED
+  CONTENT_CHANGED
+
+  // Configuration changes
+  ROBOTS_TXT_CHANGED
+
+  // Errors
+  ERROR_DETECTED
+  ERROR_RESOLVED
+
+  // Performance
+  SLOW_RESPONSE
+}
+
+enum Severity {
+  INFO
+  WARNING
+  CRITICAL
+}
