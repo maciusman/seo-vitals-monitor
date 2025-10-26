@@ -14,7 +14,8 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "worker": "tsx src/lib/jobs/worker.ts",
-    "setup": "npm install && prisma generate && prisma db push"
+    "setup": "npm install && prisma generate && prisma db push",
+    "railway:build": "bash railway-build.sh && npm run build"
   },
   "dependencies": {
     "next": "14.2.13",
