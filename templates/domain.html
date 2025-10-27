@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}{{ domain.name }} - SEO Vitals Monitor{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="/" class="btn btn-outline-secondary mb-2">
+                <i class="bi bi-arrow-left"></i> Powrót
+            </a>
+            <h1><i class="bi bi-globe"></i> {{ domain.name }}</h1>
+            <p class="text-muted">{{ domain.url }}</p>
+        </div>
+        <div>
+            <button class="btn btn-success btn-lg" onclick="startCrawl({{ domain.id }})">
+                <i class="bi bi-arrow-repeat"></i> Nowy Crawl
+            </button>
+            <form method="POST" action="/delete_domain/{{ domain.id }}" style="display: inline;">
+                <button type="submit" class="btn btn-danger btn-lg"
+                        onclick="return confirm('Czy na pewno usunąć tę domenę?')">
+                    <i class="bi bi-trash"></i> Usuń
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    {% if stats %}
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card border-primary">
+                <div class="card-body">
+                    <h3 class="text-primary">{{ stats.total_pages }}</h3>
+                    <p class="text-muted mb-0">Całkowicie Stron</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card border-success">
+                <div class="card-body">
+                    <h3 class="text-success">{{ stats.status_2xx }}</h3>
+                    <p class="text-muted mb-0">Status 2xx (OK)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card border-warning">
+                <div class="card-body">
+                    <h3 class="text-warning">{{ stats.status_4xx }}</h3>
+                    <p class="text-muted mb-0">Status 4xx (Błędy)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card border-danger">
+                <div class="card-body">
+                    <h3 class="text-danger">{{ stats.status_5xx }}</h3>
+                    <p class="text-muted mb-0">Status 5xx (Serwer)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card border-danger">
+                <div class="card-body">
+                    <h3 class="text-danger">{{ stats.noindex_pages }}</h3>
+                    <p class="text-muted mb-0">Strony z Noindex</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card border-info">
+                <div class="card-body">
+                    <h3 class="text-info">{{ stats.redirects }}</h3>
+                    <p class="text-muted mb-0">Przekierowania</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card border-warning">
+                <div class="card-body">
+                    <h3 class="text-warning">{{ stats.total_changes }}</h3>
+                    <p class="text-muted mb-0">Wykryte Zmiany</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stat-card border-primary">
+                <div class="card-body">
+                    <h3 class="text-primary">{{ (stats.avg_response_time or 0)|round }}ms</h3>
+                    <p class="text-muted mb-0">Śr. Czas Odpowiedzi</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#crawls">
+                <i class="bi bi-list-ul"></i> Historia Crawli
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#changes">
+                <i class="bi bi-exclamation-triangle"></i> Ostatnie Zmiany
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#robots">
+                <i class="bi bi-file-text"></i> Robots.txt
+            </a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- Crawls Tab -->
+        <div class="tab-pane fade show active" id="crawls">
+            {% if crawls %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Status</th>
+                            <th>Stron</th>
+                            <th>Czas Trwania</th>
+                            <th>Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for crawl in crawls %}
+                        <tr>
+                            <td>{{ crawl.started_at|datetime }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if crawl.status == 'completed' else 'warning' }}">
+                                    {{ crawl.status }}
+                                </span>
+                            </td>
+                            <td>{{ crawl.pages_crawled }}</td>
+                            <td>{{ crawl.completed_at|datetime if crawl.completed_at else '-' }}</td>
+                            <td>
+                                <a href="/crawl/{{ crawl.id }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> Zobacz
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-4">Brak crawli. Uruchom pierwszy crawl!</p>
+            {% endif %}
+        </div>
+
+        <!-- Changes Tab -->
+        <div class="tab-pane fade" id="changes">
+            {% if changes %}
+            <div class="list-group">
+                {% for change in changes %}
+                <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">
+                            <span class="badge bg-{{ change.severity|severity_badge }}">
+                                {{ change.severity }}
+                            </span>
+                            {{ change.change_type }}
+                        </h6>
+                        <small>{{ change.detected_at|datetime }}</small>
+                    </div>
+                    <p class="mb-1">{{ change.description }}</p>
+                    <small class="text-muted">{{ change.url }}</small>
+                    {% if change.old_value or change.new_value %}
+                    <div class="mt-2">
+                        {% if change.old_value %}
+                        <small><strong>Stara:</strong> {{ change.old_value }}</small><br>
+                        {% endif %}
+                        {% if change.new_value %}
+                        <small><strong>Nowa:</strong> {{ change.new_value }}</small>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-4">Brak wykrytych zmian</p>
+            {% endif %}
+        </div>
+
+        <!-- Robots.txt Tab -->
+        <div class="tab-pane fade" id="robots">
+            {% if robots %}
+            <div class="card">
+                <div class="card-header">
+                    <strong>Robots.txt</strong>
+                    <span class="text-muted float-end">{{ robots.checked_at|datetime }}</span>
+                </div>
+                <div class="card-body">
+                    <pre>{{ robots.content }}</pre>
+                </div>
+            </div>
+            {% else %}
+            <p class="text-muted text-center py-4">Brak robots.txt</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function startCrawl(domainId) {
+    if (confirm('Rozpocząć crawling domeny?')) {
+        const maxPages = prompt('Maksymalna liczba stron do przeskanowania:', '100');
+        if (!maxPages) return;
+
+        const formData = new FormData();
+        formData.append('max_pages', maxPages);
+
+        fetch(`/start_crawl/${domainId}`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        })
+        .catch(error => {
+            alert('Błąd: ' + error);
+        });
+    }
+}
+</script>
+{% endblock %}

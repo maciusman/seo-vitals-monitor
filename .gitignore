@@ -1,37 +1,37 @@
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+*.egg
+*.egg-info/
+dist/
+build/
 
-# testing
-/coverage
+# Database
+data/
+*.db
+*.sqlite
+*.sqlite3
 
-# next.js
-/.next/
-/out/
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
-# production
-/build
-
-# misc
+# OS
 .DS_Store
-*.pem
+Thumbs.db
 
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# local env files
-.env*.local
+# Env
 .env
+.env.local
 
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-
-# prisma
-prisma/migrations/
+# Logs
+*.log

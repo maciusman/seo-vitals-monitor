@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - SEO Vitals Monitor{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-speedometer2"></i> Dashboard Domen</h1>
+        <a href="/add_domain" class="btn btn-primary btn-lg">
+            <i class="bi bi-plus-circle"></i> Dodaj Domenę
+        </a>
+    </div>
+
+    {% if domains %}
+        <div class="row">
+            {% for domain in domains %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card domain-card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-globe"></i> {{ domain.name }}
+                        </h5>
+                        <p class="card-text text-muted small">
+                            <i class="bi bi-link-45deg"></i> {{ domain.url }}
+                        </p>
+
+                        <!-- Health Score -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="text-muted">Health Score</span>
+                                <span class="health-score {% if domain.health_score >= 80 %}text-success{% elif domain.health_score >= 60 %}text-warning{% else %}text-danger{% endif %}">
+                                    {{ domain.health_score }}/100
+                                </span>
+                            </div>
+                            <div class="progress health-bar">
+                                <div class="progress-bar {% if domain.health_score >= 80 %}bg-success{% elif domain.health_score >= 60 %}bg-warning{% else %}bg-danger{% endif %}"
+                                     style="width: {{ domain.health_score }}%">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Stats -->
+                        {% if domain.stats %}
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <small class="text-muted">Strony</small>
+                                <div class="fw-bold">{{ domain.stats.total_pages }}</div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Błędy 4xx</small>
+                                <div class="fw-bold text-warning">{{ domain.stats.status_4xx }}</div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Zmiany</small>
+                                <div class="fw-bold text-info">{{ domain.stats.total_changes }}</div>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Noindex</small>
+                                <div class="fw-bold text-danger">{{ domain.stats.noindex_pages }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- Last Crawled -->
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                <i class="bi bi-clock-history"></i>
+                                Ostatni crawl: {{ domain.last_crawled|datetime if domain.last_crawled else 'Nigdy' }}
+                            </small>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="d-grid gap-2">
+                            <a href="/domain/{{ domain.id }}" class="btn btn-outline-primary">
+                                <i class="bi bi-eye"></i> Zobacz Szczegóły
+                            </a>
+                            <button class="btn btn-success" onclick="startCrawl({{ domain.id }})">
+                                <i class="bi bi-arrow-repeat"></i> Uruchom Crawl
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-inbox" style="font-size: 5rem; color: #ccc;"></i>
+            <h3 class="mt-3">Brak domen</h3>
+            <p class="text-muted">Dodaj swoją pierwszą domenę do monitorowania</p>
+            <a href="/add_domain" class="btn btn-primary btn-lg mt-3">
+                <i class="bi bi-plus-circle"></i> Dodaj Domenę
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function startCrawl(domainId) {
+    if (confirm('Rozpocząć crawling domeny?')) {
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Crawling...';
+
+        fetch(`/start_crawl/${domainId}`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        })
+        .catch(error => {
+            alert('Błąd: ' + error);
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        });
+    }
+}
+</script>
+{% endblock %}

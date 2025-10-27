@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Dodaj Domenę - SEO Vitals Monitor{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <div class="mb-4">
+        <a href="/" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Powrót
+        </a>
+    </div>
+
+    <h1 class="mb-4"><i class="bi bi-plus-circle"></i> Dodaj Nową Domenę</h1>
+
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST" action="/add_domain">
+        <div class="mb-3">
+            <label for="name" class="form-label">Nazwa Domeny *</label>
+            <input type="text" class="form-control" id="name" name="name" required
+                   placeholder="np. Moja Strona">
+        </div>
+
+        <div class="mb-3">
+            <label for="url" class="form-label">URL *</label>
+            <input type="url" class="form-control" id="url" name="url" required
+                   placeholder="https://example.com">
+            <div class="form-text">Wpisz pełny adres URL z https://</div>
+        </div>
+
+        <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi bi-check-circle"></i> Dodaj Domenę
+            </button>
+            <a href="/" class="btn btn-outline-secondary">Anuluj</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

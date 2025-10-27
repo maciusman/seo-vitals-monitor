@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Crawl {{ crawl.id }} - {{ crawl.domain_name }}{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <div class="mb-4">
+        <a href="/domain/{{ crawl.domain_id }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Powrót do Domeny
+        </a>
+    </div>
+
+    <h1 class="mb-4">
+        <i class="bi bi-list-check"></i> Szczegóły Crawla
+    </h1>
+
+    <!-- Crawl Info -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <strong>Domena:</strong><br>
+                    <a href="/domain/{{ crawl.domain_id }}">{{ crawl.domain_name }}</a>
+                </div>
+                <div class="col-md-3">
+                    <strong>Status:</strong><br>
+                    <span class="badge bg-{{ 'success' if crawl.status == 'completed' else 'warning' }}">
+                        {{ crawl.status }}
+                    </span>
+                </div>
+                <div class="col-md-3">
+                    <strong>Rozpoczęty:</strong><br>
+                    {{ crawl.started_at|datetime }}
+                </div>
+                <div class="col-md-3">
+                    <strong>Zakończony:</strong><br>
+                    {{ crawl.completed_at|datetime if crawl.completed_at else 'W toku...' }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card border-primary">
+                <div class="card-body text-center">
+                    <h2 class="text-primary">{{ total_pages }}</h2>
+                    <p class="mb-0">Stron Ogółem</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card border-success">
+                <div class="card-body text-center">
+                    <h2 class="text-success">{{ status_stats['2xx'] }}</h2>
+                    <p class="mb-0">2xx (OK)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card border-warning">
+                <div class="card-body text-center">
+                    <h2 class="text-warning">{{ status_stats['4xx'] }}</h2>
+                    <p class="mb-0">4xx (Client Error)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card border-danger">
+                <div class="card-body text-center">
+                    <h2 class="text-danger">{{ status_stats['5xx'] }}</h2>
+                    <p class="mb-0">5xx (Server Error)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#pages">
+                <i class="bi bi-file-earmark"></i> Strony ({{ total_pages }})
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="tab" href="#changes">
+                <i class="bi bi-exclamation-triangle"></i> Zmiany ({{ changes|length }})
+            </a>
+        </li>
+    </ul>
+
+    <div class="tab-content">
+        <!-- Pages Tab -->
+        <div class="tab-pane fade show active" id="pages">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover" id="pagesTable">
+                    <thead>
+                        <tr>
+                            <th>URL</th>
+                            <th>Status</th>
+                            <th>Title</th>
+                            <th>Noindex</th>
+                            <th>Redirect</th>
+                            <th>Czas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for page in pages %}
+                        <tr>
+                            <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">
+                                <small>{{ page.url }}</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ page.status_code|status_badge }}">
+                                    {{ page.status_code or 'Error' }}
+                                </span>
+                            </td>
+                            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">
+                                <small>{{ page.title or '-' }}</small>
+                            </td>
+                            <td>
+                                {% if page.has_noindex %}
+                                <span class="badge bg-danger">Tak</span>
+                                {% else %}
+                                <span class="badge bg-success">Nie</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if page.redirect_url %}
+                                <i class="bi bi-arrow-right text-info"></i>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td><small>{{ page.response_time }}ms</small></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Changes Tab -->
+        <div class="tab-pane fade" id="changes">
+            {% if changes %}
+            <div class="list-group">
+                {% for change in changes %}
+                <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">
+                            <span class="badge bg-{{ change.severity|severity_badge }}">
+                                {{ change.severity }}
+                            </span>
+                            {{ change.change_type }}
+                        </h6>
+                        <small>{{ change.detected_at|datetime }}</small>
+                    </div>
+                    <p class="mb-1">{{ change.description }}</p>
+                    <small class="text-muted">{{ change.url }}</small>
+                    {% if change.old_value or change.new_value %}
+                    <div class="mt-2 small">
+                        {% if change.old_value %}
+                        <strong>Stara wartość:</strong> {{ change.old_value }}<br>
+                        {% endif %}
+                        {% if change.new_value %}
+                        <strong>Nowa wartość:</strong> {{ change.new_value }}
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-center text-muted py-4">Brak wykrytych zmian</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
