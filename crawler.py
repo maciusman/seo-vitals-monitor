@@ -137,7 +137,7 @@ class SEOCrawler:
 
             # Parsuj HTML tylko dla 200
             if response.status_code == 200 and 'text/html' in response.headers.get('Content-Type', ''):
-                soup = BeautifulSoup(response.content, 'lxml')
+                soup = BeautifulSoup(response.content, 'html.parser')
 
                 # Title
                 if soup.title:
